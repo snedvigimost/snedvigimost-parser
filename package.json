@@ -18,6 +18,8 @@
   },
   "homepage": "https://github.com/andriyor/snedvigimost-parser#readme",
   "dependencies": {
+    "core-js": "^3.6.5",
+    "core-js-pure": "^3.6.5",
     "pg": "^8.2.1",
     "playwright": "^1.0.2",
     "puppeteer": "^3.1.0",

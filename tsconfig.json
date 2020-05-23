@@ -2,7 +2,7 @@
   "compilerOptions":
   {
     "experimentalDecorators": true,
-    "target": "es2015",
+    "target": "ESNext",
     "module": "commonjs",
     "moduleResolution": "node",
     "declaration": true,
@@ -16,9 +16,9 @@
       "node"
     ]
   },
-  "include":
-  [
-    "src/*"
+  "include": [
+    "src/*",
+    "node_modules/@types/filesystem/index.d.ts"
   ],
   "exclude":
   [

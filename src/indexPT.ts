@@ -1,14 +1,28 @@
-const puppeteer = require('puppeteer-extra')
+import "reflect-metadata";
 
+import {createConnection, getConnection} from "typeorm";
+
+const puppeteer = require('puppeteer-extra')
 const AdblockerPlugin = require('puppeteer-extra-plugin-adblocker')
+
+import {Listing} from "./entity/listing";
+import * as conn from "./listing_con";
+import {ListingEntity} from "./entity/listing.entity";
+import {ListingMetadata} from "./entity/listing-metadata";
+import {DBConfig} from "./listing_con";
+
 puppeteer.use(AdblockerPlugin())
 
 async function getTitle(page) {
   return page.evaluate((selector) => document.querySelector(selector).innerText, 'h1');
 }
 
-async function getPrice(page) {
-  return page.evaluate(selector => document.querySelector(selector).innerText, '.pricelabel__value');
+async function getPrice(page): Promise<number> {
+  return page.evaluate(selector => {
+    return Number(document.querySelector(selector).innerText
+      .replace(' ', '').replace(' ', '')
+      .replace('грн.', ''));
+  }, '.pricelabel__value');
 }
 
 async function showNumbers(page) {
@@ -34,60 +48,72 @@ async function getPublicationDate(page) {
     '.offer-bottombar__item em strong');
 }
 
-async function getFloor(page) {
-  return page.evaluate(selector => {
+async function getMetadata(page) {
+  const listingMetadata = new ListingMetadata();
+  return page.evaluate((selector, listingMetadata: ListingMetadata) => {
+    console.log(listingMetadata);
     const elements = document.querySelectorAll(selector);
-    const metadata = {};
     for (const e of elements) {
       const text = e.childNodes[1].querySelector('strong').innerText;
       switch (e.childNodes[1].querySelector('span')?.innerText) {
         case 'Этаж':
-          metadata['floor'] = text;
+          listingMetadata.floor = Number(text);
+          // metadata['floor'] = text;
           break;
         case 'Этажность':
-          metadata['floors'] = text;
+          listingMetadata.floor_in_house = Number(text);
+          // metadata['floor_in_house'] = text;
           break;
         case 'Количество комнат':
-          metadata['roomsCount'] = text;
+          listingMetadata.rooms_count = Number(text);
+          // metadata['rooms_count'] = text;
           break;
         case 'Общая площадь':
-          metadata['totalArea'] = text.replace(' м²', '');
+          listingMetadata.total_area = Number(text.replace(' м²', ''));
+          // metadata['total_area'] = text.replace(' м²', '');
           break;
         case 'Площадь кухни':
-          metadata['kitchenArea'] = text.replace(' м²', '');
+          listingMetadata.kitchen_area = Number(text.replace(' м²', ''));
+          // metadata['kitchen_area'] = text.replace(' м²', '');
           break;
         case 'Тип объекта':
-          metadata['type'] = text;
+          listingMetadata.type = text;
+          // metadata['type'] = text;
           break;
         default:
           console.log('This animal will not.');
           break;
       }
     }
-    return metadata;
-  }, '.offer-details__item');
+    return listingMetadata;
+  }, '.offer-details__item', listingMetadata);
 }
 
 
 (async () => {
-  const browser = await puppeteer.launch({ headless: false});
+  const browser = await puppeteer.launch({headless: false});
   const page = await browser.newPage();
   await page.goto(
     'https://www.olx.ua/obyavlenie/bez-komissii-sdam-svoyu-3-h-komnatnuyu-kvartiru-IDHmsXk.html',
   );
   await page.waitForSelector('h1');
-  const title = await getTitle(page);
-  const price = await getPrice(page);
-  const floor = await getFloor(page);
-  console.log(title);
-  console.log(price);
-  console.log(floor);
+  const metadata = await getMetadata(page);
+  const listing = await new Listing(metadata);
+  listing.title = await getTitle(page);
+  listing.price = await getPrice(page);
   await showNumbers(page);
-  const description = await getDescription(page);
-  console.log(description);
-  const publicationDate = await getPublicationDate(page);
-  console.log(publicationDate);
+  listing.description = await getDescription(page);
+  listing.publication_date = await getPublicationDate(page);
   await page.waitFor(1000);
-  const phoneNumber = await getPhoneNumber(page);
-  console.log(phoneNumber);
+  listing.phone_number = await getPhoneNumber(page);
+  console.log(listing);
+  const listingEntity = await new ListingEntity(listing);
+  const connection = await createConnection(DBConfig);
+  try {
+    const saved = await connection.manager.save(listingEntity);
+    console.log('');
+    console.log(saved);
+  } catch (e) {
+    console.log(e);
+  }
 })();
