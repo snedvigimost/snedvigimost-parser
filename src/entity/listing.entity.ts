@@ -1,8 +1,7 @@
 import "reflect-metadata";
 
+import {Dayjs} from "dayjs";
 import {Entity, Column, PrimaryGeneratedColumn} from "typeorm";
-
-import {Listing} from "./listing";
 
 @Entity({
   name: 'listings_listing'
@@ -48,12 +47,14 @@ export class ListingEntity {
   @Column("int")
   floor_in_house: number;
 
-  @Column("text")
-  publication_date: string;
+  @Column("timestamp")
+  publication_date: Dayjs;
 
-  constructor(listingEntity?: Listing) {
-    // @ts-ignore
-    return (async () => {
+  // @Column("text")
+  // type: string;
+
+  constructor(listingEntity?: ListingEntity) {
+    if (listingEntity) {
       console.log('const listingEntity');
       this.title = listingEntity.title;
       this.address = listingEntity.address;
@@ -69,7 +70,6 @@ export class ListingEntity {
       this.floor_in_house = listingEntity.floor_in_house;
       this.phone_number = listingEntity.phone_number;
       this.publication_date = listingEntity.publication_date;
-      return this; // when done
-    })();
+    }
   }
 }

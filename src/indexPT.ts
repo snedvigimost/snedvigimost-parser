@@ -1,16 +1,18 @@
 import "reflect-metadata";
 
-import {createConnection, getConnection} from "typeorm";
+import * as dayjs from 'dayjs';
 
-const puppeteer = require('puppeteer-extra')
-const AdblockerPlugin = require('puppeteer-extra-plugin-adblocker')
+require('dayjs/locale/ru');
+import {createConnection} from "typeorm";
+import * as customParseFormat from 'dayjs/plugin/customParseFormat';
+import {Dayjs} from "dayjs";
+import puppeteer from 'puppeteer-extra';
 
-import {Listing} from "./entity/listing";
-import * as conn from "./listing_con";
+const AdblockerPlugin = require('puppeteer-extra-plugin-adblocker');
 import {ListingEntity} from "./entity/listing.entity";
-import {ListingMetadata} from "./entity/listing-metadata";
-import {DBConfig} from "./listing_con";
 
+dayjs.locale('ru')
+dayjs.extend(customParseFormat)
 puppeteer.use(AdblockerPlugin())
 
 async function getTitle(page) {
@@ -43,41 +45,42 @@ async function getDescription(page) {
     '.descriptioncontent__headline');
 }
 
-async function getPublicationDate(page) {
-  return page.evaluate(selector => document.querySelector(selector).innerText.replace('в ', ''),
+async function getPublicationDate(page): Promise<Dayjs> {
+  const dateString = await page.evaluate(selector => document.querySelector(selector).innerText
+      .replace('в ', ''),
     '.offer-bottombar__item em strong');
+  return dayjs(dateString, "HH:mm, DD MMMM YYYY");
 }
 
-async function getMetadata(page) {
-  const listingMetadata = new ListingMetadata();
-  return page.evaluate((selector, listingMetadata: ListingMetadata) => {
-    console.log(listingMetadata);
+async function getMetadata(page): Promise<ListingEntity> {
+  const listingEntity = new ListingEntity();
+  return page.evaluate((selector, listing) => {
     const elements = document.querySelectorAll(selector);
     for (const e of elements) {
       const text = e.childNodes[1].querySelector('strong').innerText;
       switch (e.childNodes[1].querySelector('span')?.innerText) {
         case 'Этаж':
-          listingMetadata.floor = Number(text);
+          listing.floor = Number(text);
           // metadata['floor'] = text;
           break;
         case 'Этажность':
-          listingMetadata.floor_in_house = Number(text);
+          listing.floor_in_house = Number(text);
           // metadata['floor_in_house'] = text;
           break;
         case 'Количество комнат':
-          listingMetadata.rooms_count = Number(text);
+          listing.rooms_count = Number(text);
           // metadata['rooms_count'] = text;
           break;
         case 'Общая площадь':
-          listingMetadata.total_area = Number(text.replace(' м²', ''));
+          listing.total_area = Number(text.replace(' м²', ''));
           // metadata['total_area'] = text.replace(' м²', '');
           break;
         case 'Площадь кухни':
-          listingMetadata.kitchen_area = Number(text.replace(' м²', ''));
+          listing.kitchen_area = Number(text.replace(' м²', ''));
           // metadata['kitchen_area'] = text.replace(' м²', '');
           break;
         case 'Тип объекта':
-          listingMetadata.type = text;
+          listing.type = text;
           // metadata['type'] = text;
           break;
         default:
@@ -85,8 +88,8 @@ async function getMetadata(page) {
           break;
       }
     }
-    return listingMetadata;
-  }, '.offer-details__item', listingMetadata);
+    return listing;
+  }, '.offer-details__item', listingEntity);
 }
 
 
@@ -97,18 +100,16 @@ async function getMetadata(page) {
     'https://www.olx.ua/obyavlenie/bez-komissii-sdam-svoyu-3-h-komnatnuyu-kvartiru-IDHmsXk.html',
   );
   await page.waitForSelector('h1');
-  const metadata = await getMetadata(page);
-  const listing = await new Listing(metadata);
-  listing.title = await getTitle(page);
-  listing.price = await getPrice(page);
+  const listingEntity = await new ListingEntity(await getMetadata(page));
+  listingEntity.title = await getTitle(page);
+  listingEntity.price = await getPrice(page);
   await showNumbers(page);
-  listing.description = await getDescription(page);
-  listing.publication_date = await getPublicationDate(page);
+  listingEntity.description = await getDescription(page);
+  listingEntity.publication_date = await getPublicationDate(page);
   await page.waitFor(1000);
-  listing.phone_number = await getPhoneNumber(page);
-  console.log(listing);
-  const listingEntity = await new ListingEntity(listing);
-  const connection = await createConnection(DBConfig);
+  listingEntity.phone_number = await getPhoneNumber(page);
+  console.log(listingEntity);
+  const connection = await createConnection();
   try {
     const saved = await connection.manager.save(listingEntity);
     console.log('');
