@@ -61,27 +61,21 @@ async function getMetadata(page): Promise<ListingEntity> {
       switch (e.childNodes[1].querySelector('span')?.innerText) {
         case 'Этаж':
           listing.floor = Number(text);
-          // metadata['floor'] = text;
           break;
         case 'Этажность':
           listing.floor_in_house = Number(text);
-          // metadata['floor_in_house'] = text;
           break;
         case 'Количество комнат':
           listing.rooms_count = Number(text);
-          // metadata['rooms_count'] = text;
           break;
         case 'Общая площадь':
           listing.total_area = Number(text.replace(' м²', ''));
-          // metadata['total_area'] = text.replace(' м²', '');
           break;
         case 'Площадь кухни':
           listing.kitchen_area = Number(text.replace(' м²', ''));
-          // metadata['kitchen_area'] = text.replace(' м²', '');
           break;
         case 'Тип объекта':
           listing.type = text;
-          // metadata['type'] = text;
           break;
         default:
           console.log('This animal will not.');
@@ -91,7 +85,6 @@ async function getMetadata(page): Promise<ListingEntity> {
     return listing;
   }, '.offer-details__item', listingEntity);
 }
-
 
 (async () => {
   const browser = await puppeteer.launch({headless: false});
