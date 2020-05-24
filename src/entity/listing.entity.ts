@@ -55,7 +55,6 @@ export class ListingEntity {
 
   constructor(listingEntity?: ListingEntity) {
     if (listingEntity) {
-      console.log('const listingEntity');
       this.title = listingEntity.title;
       this.address = listingEntity.address;
       this.year = listingEntity.year;
