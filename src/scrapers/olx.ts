@@ -125,4 +125,3 @@ export class OLX implements ScraperInterface {
   }
 
 }
-

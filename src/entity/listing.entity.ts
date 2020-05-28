@@ -1,7 +1,9 @@
 import "reflect-metadata";
 
 import {Dayjs} from "dayjs";
-import {Entity, Column, PrimaryGeneratedColumn} from "typeorm";
+import {Entity, Column, PrimaryGeneratedColumn, JoinTable, ManyToMany} from "typeorm";
+
+import {ImageEntity} from "./image.entity";
 
 @Entity({
   name: 'listings_listing'
@@ -49,6 +51,18 @@ export class ListingEntity {
 
   @Column("timestamp")
   publication_date: Dayjs;
+
+  @ManyToMany(() => ImageEntity)
+  @JoinTable({
+    name: 'listings_listing_images',
+    joinColumns: [
+      {name: 'listing_id'}
+    ],
+    inverseJoinColumns: [
+      {name: 'image_id'}
+    ]
+  })
+  images: ImageEntity[];
 
   // @Column("text")
   // type: string;
