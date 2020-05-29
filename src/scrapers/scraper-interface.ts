@@ -5,7 +5,7 @@ import {StorageInterface} from "../stor/storage-interface";
 export interface ScraperInterface {
   url: string;
   storage: StorageInterface;
-  browser: Puppeteer.Browser;
+  page: Puppeteer.Page;
 
   getMetadata(page: Puppeteer.Page): Promise<ListingEntity>;
 

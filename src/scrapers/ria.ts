@@ -1,18 +1,18 @@
-import {Connection} from "typeorm/connection/Connection";
 import * as Puppeteer from "puppeteer-extra/dist/puppeteer";
 
 import {ListingEntity} from "../entity/listing.entity";
 import {ScraperInterface} from "./scraper-interface";
+import {StorageInterface} from "../stor/storage-interface";
 
 export class Ria implements ScraperInterface {
   url: string;
-  connection: Connection;
-  browser: Puppeteer.Browser;
+  page: Puppeteer.Page;
+  storage: StorageInterface;
 
-  constructor(browser: Puppeteer.Browser, connection: Connection, url: string) {
+  constructor(page: Puppeteer.Page, storage: StorageInterface, url: string) {
     this.url = url;
-    this.browser = browser;
-    this.connection = connection;
+    this.page = page;
+    this.storage = storage;
   }
 
   async getMetadata(page: Puppeteer.Page): Promise<ListingEntity> {
@@ -36,10 +36,9 @@ export class Ria implements ScraperInterface {
   }
 
   async scrape(): Promise<ListingEntity> {
-    const page = await this.browser.newPage();
-    await page.goto(this.url, {timeout: 60000});
-    await page.waitForSelector('h1');
-    const listingEntity = await new ListingEntity(await this.getMetadata(page));
+    await this.page.goto(this.url, {timeout: 60000});
+    await this.page.waitForSelector('h1');
+    const listingEntity = await new ListingEntity(await this.getMetadata(this.page));
     console.log(listingEntity);
     return listingEntity;
   };

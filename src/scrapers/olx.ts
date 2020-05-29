@@ -19,11 +19,11 @@ puppeteer.use(AdblockerPlugin())
 export class OLX implements ScraperInterface {
   url: string;
   storage: StorageInterface;
-  browser: Puppeteer.Browser;
+  page: Puppeteer.Page;
 
-  constructor(browser: Puppeteer.Browser, storage: StorageInterface, url: string) {
+  constructor(page: Puppeteer.Page, storage: StorageInterface, url: string) {
     this.url = url;
-    this.browser = browser;
+    this.page = page;
     this.storage = storage;
   }
 
@@ -99,18 +99,40 @@ export class OLX implements ScraperInterface {
     return new ListingEntity(listingEntity as ListingEntity);
   }
 
+
+  async getImagesUrls(page: Puppeteer.Page): Promise<string[]> {
+    const getImageSrc = async () => await page.evaluate(() => document.querySelector('.bigImage').getAttribute('src'));
+    const totalImages = await page.evaluate(
+      () => Number(document.querySelector('.descgallery__counter')
+        .getAttribute('data-to')
+        .replace('0', '')));
+    await page.waitFor(1200);
+    const imagesUrl = [await getImageSrc()];
+    for (const x of [...Array(totalImages - 1)]) {
+      await page.click('.descgallery__next');
+      imagesUrl.push(await getImageSrc());
+      await this.page.waitForResponse(response => response.url().includes('https://ireland.apollo.olxcdn.com/v1/files') && response.status() === 200);
+    }
+    return imagesUrl;
+  }
+
+  async downloadImages(page: Puppeteer.Page) {
+    const imagesUrl = await this.getImagesUrls(page);
+    console.log(imagesUrl);
+  }
+
   async scrape(): Promise<ListingEntity> {
-    const page = await this.browser.newPage();
-    await page.goto(this.url, {timeout: 60000});
-    await page.waitForSelector('h1');
-    const listingEntity = await this.getMetadata(page);
-    listingEntity.title = await this.getTitle(page);
-    listingEntity.price = await this.getPrice(page);
-    await this.showNumbers(page);
-    listingEntity.description = await this.getDescription(page);
-    listingEntity.publication_date = await this.getPublicationDate(page);
-    await page.waitFor(1000);
-    listingEntity.phone_number = await this.getPhoneNumber(page);
+    await this.page.goto(this.url, {timeout: 60000});
+    await this.page.waitForSelector('.descgallery__next');
+    const listingEntity = await this.getMetadata(this.page);
+    const downloadImages = await this.downloadImages(this.page);
+    // listingEntity.title = await this.getTitle(page);
+    // listingEntity.price = await this.getPrice(page);
+    // await this.showNumbers(page);
+    // listingEntity.description = await this.getDescription(page);
+    // listingEntity.publication_date = await this.getPublicationDate(page);
+    // await page.waitFor(1000);
+    // listingEntity.phone_number = await this.getPhoneNumber(page);
     return listingEntity;
   };
 
