@@ -3,6 +3,9 @@ import {ConnectionOptions, createConnection} from "typeorm";
 import {Ria} from "./scrapers/ria";
 import {ListingEntity} from "./entity/listing.entity";
 import {ImageEntity} from "./entity/image.entity";
+import {ApiStorage} from "./stor/api";
+import {DatabaseStorage} from "./stor/database";
+const axios = require('axios');
 
 const puppeteer = require('puppeteer');
 
@@ -15,10 +18,13 @@ const puppeteer = require('puppeteer');
   // // const olx = new Ria(browser, connection, url);
   // // await olx.scrape();
   // await olx.store();
-  const image = new ImageEntity('path');
-  await connection.manager.save(image);
+  // const image = new ImageEntity('path');
+  // await connection.manager.save(image);
   const listing = new ListingEntity();
-  listing.images = [image];
-  await connection.manager.save(listing);
+  console.log(listing);
+  // console.log(new ApiStorage('http://127.0.0.1:4222/api/v1/listings/').save(listing));
+  console.log(new DatabaseStorage(connection).save(listing));
+  // listing.images = [image];
+  // await connection.manager.save(listing);
 
 })();

@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/andriyor/snedvigimost-parser#readme",
   "dependencies": {
+    "axios": "^0.19.2",
     "core-js": "^3.6.5",
     "core-js-pure": "^3.6.5",
     "dayjs": "^1.8.27",

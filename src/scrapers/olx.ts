@@ -8,8 +8,9 @@ import puppeteer from 'puppeteer-extra';
 const AdblockerPlugin = require('puppeteer-extra-plugin-adblocker');
 import {ListingEntity} from "../entity/listing.entity";
 import * as Puppeteer from "puppeteer-extra/dist/puppeteer";
-import {Connection} from "typeorm/connection/Connection";
-import { ScraperInterface } from "./scraper-interface";
+
+import {ScraperInterface} from "./scraper-interface";
+import {StorageInterface} from "../stor/storage-interface";
 
 dayjs.locale('ru')
 dayjs.extend(customParseFormat)
@@ -17,13 +18,13 @@ puppeteer.use(AdblockerPlugin())
 
 export class OLX implements ScraperInterface {
   url: string;
-  connection: Connection;
+  storage: StorageInterface;
   browser: Puppeteer.Browser;
 
-  constructor(browser: Puppeteer.Browser, connection: Connection, url: string) {
+  constructor(browser: Puppeteer.Browser, storage: StorageInterface, url: string) {
     this.url = url;
     this.browser = browser;
-    this.connection = connection;
+    this.storage = storage;
   }
 
   async getTitle(page: Puppeteer.Page): Promise<string> {
@@ -115,8 +116,8 @@ export class OLX implements ScraperInterface {
 
   async store() {
     const listingEntity = await this.scrape();
-     try {
-      const saved = await this.connection.manager.save(listingEntity);
+    try {
+      const saved = await this.storage.save(listingEntity);
       console.log('');
       console.log(saved);
     } catch (e) {
