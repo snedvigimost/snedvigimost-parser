@@ -5,6 +5,7 @@ import {ListingEntity} from "./entity/listing.entity";
 import {ImageEntity} from "./entity/image.entity";
 import {ApiStorage} from "./stor/api";
 import {DatabaseStorage} from "./stor/database";
+import {FileStorage} from "./stor/file";
 const axios = require('axios');
 
 const puppeteer = require('puppeteer');
@@ -16,7 +17,8 @@ const puppeteer = require('puppeteer');
   const connection = await createConnection();
   const url = 'https://www.olx.ua/obyavlenie/bez-komissii-sdam-svoyu-3-h-komnatnuyu-kvartiru-IDHmsXk.html';
   // // const url = 'https://dom.ria.com/ru/realty-dolgosrochnaya -arenda-kvartira-cherkassy-tsentr-17133629.html';
-  const olx = new OLX(page, new DatabaseStorage(connection), url);
+  const fileStorage = new FileStorage();
+  const olx = new OLX(page, new DatabaseStorage(connection), url, fileStorage);
   // // const olx = new Ria(browser, connection, url);
   console.log(await olx.scrape());
   // await olx.store();

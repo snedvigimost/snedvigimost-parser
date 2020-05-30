@@ -1,13 +1,18 @@
+import * as path from "path";
+
 import * as dayjs from 'dayjs';
 
 require('dayjs/locale/ru');
 import * as customParseFormat from 'dayjs/plugin/customParseFormat';
 import {Dayjs} from "dayjs";
+
 import puppeteer from 'puppeteer-extra';
 
 const AdblockerPlugin = require('puppeteer-extra-plugin-adblocker');
-import {ListingEntity} from "../entity/listing.entity";
 import * as Puppeteer from "puppeteer-extra/dist/puppeteer";
+
+import {FileStorage} from "../stor/file";
+import {ListingEntity} from "../entity/listing.entity";
 
 import {ScraperInterface} from "./scraper-interface";
 import {StorageInterface} from "../stor/storage-interface";
@@ -18,13 +23,17 @@ puppeteer.use(AdblockerPlugin())
 
 export class OLX implements ScraperInterface {
   url: string;
-  storage: StorageInterface;
+  isLastImage = false;
   page: Puppeteer.Page;
+  fileStorage: FileStorage;
+  storage: StorageInterface;
+  storedImagePaths: string[] = [];
 
-  constructor(page: Puppeteer.Page, storage: StorageInterface, url: string) {
+  constructor(page: Puppeteer.Page, storage: StorageInterface, url: string, fileStorage: FileStorage) {
     this.url = url;
     this.page = page;
     this.storage = storage;
+    this.fileStorage = fileStorage;
   }
 
   async getTitle(page: Puppeteer.Page): Promise<string> {
@@ -100,39 +109,55 @@ export class OLX implements ScraperInterface {
   }
 
 
-  async getImagesUrls(page: Puppeteer.Page): Promise<string[]> {
-    const getImageSrc = async () => await page.evaluate(() => document.querySelector('.bigImage').getAttribute('src'));
+  async uploadImages() {
+    console.log(this.storedImagePaths);
+  }
+
+  async slideImages(page: Puppeteer.Page) {
     const totalImages = await page.evaluate(
       () => Number(document.querySelector('.descgallery__counter')
         .getAttribute('data-to')
         .replace('0', '')));
-    await page.waitFor(1200);
-    const imagesUrl = [await getImageSrc()];
+    await page.waitFor(2000);
     for (const x of [...Array(totalImages - 1)]) {
       await page.click('.descgallery__next');
-      imagesUrl.push(await getImageSrc());
-      await this.page.waitForResponse(response => response.url().includes('https://ireland.apollo.olxcdn.com/v1/files') && response.status() === 200);
+      // without that on('response', dont run
+      await this.page.waitForResponse(response => response.url().includes(';s=1000x700') && response.status() === 200);
     }
-    return imagesUrl;
+    /*
+     if replace that with await this.uploadImages(); last item will not be pushed to list
+     so firstly called waitForResponse than on('response',
+    */
+    this.isLastImage = true;
   }
 
-  async downloadImages(page: Puppeteer.Page) {
-    const imagesUrl = await this.getImagesUrls(page);
-    console.log(imagesUrl);
+
+  async interceptImages() {
+    await this.page.on('response', async (response) => {
+      if (response.url().includes(';s=1000x700') && response.status() === 200) {
+        const imageFileName = `${new URL(response.url()).pathname.split('/')[3]}.jpeg`;
+        const imagePath = path.join('images', imageFileName);
+        await this.fileStorage.save(imagePath, await response.buffer());
+        this.storedImagePaths.push(imagePath);
+        if (this.isLastImage) {
+          await this.uploadImages();
+        }
+      }
+    });
   }
 
   async scrape(): Promise<ListingEntity> {
+    await this.interceptImages();
     await this.page.goto(this.url, {timeout: 60000});
-    await this.page.waitForSelector('.descgallery__next');
     const listingEntity = await this.getMetadata(this.page);
-    const downloadImages = await this.downloadImages(this.page);
-    // listingEntity.title = await this.getTitle(page);
-    // listingEntity.price = await this.getPrice(page);
-    // await this.showNumbers(page);
-    // listingEntity.description = await this.getDescription(page);
-    // listingEntity.publication_date = await this.getPublicationDate(page);
-    // await page.waitFor(1000);
-    // listingEntity.phone_number = await this.getPhoneNumber(page);
+    await this.slideImages(this.page);
+    listingEntity.title = await this.getTitle(this.page);
+    listingEntity.price = await this.getPrice(this.page);
+    await this.showNumbers(this.page);
+    listingEntity.description = await this.getDescription(this.page);
+    listingEntity.publication_date = await this.getPublicationDate(this.page);
+    await this.page.waitFor(1000);
+    listingEntity.phone_number = await this.getPhoneNumber(this.page);
     return listingEntity;
   };
 
