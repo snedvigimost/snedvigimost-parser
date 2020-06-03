@@ -5,10 +5,6 @@ import * as dayjs from 'dayjs';
 require('dayjs/locale/ru');
 import * as customParseFormat from 'dayjs/plugin/customParseFormat';
 import {Dayjs} from "dayjs";
-
-import puppeteer from 'puppeteer-extra';
-
-const AdblockerPlugin = require('puppeteer-extra-plugin-adblocker');
 import * as Puppeteer from "puppeteer-extra/dist/puppeteer";
 
 import {FileStorage} from "../stor/file";
@@ -19,7 +15,6 @@ import {StorageInterface} from "../stor/storage-interface";
 
 dayjs.locale('ru')
 dayjs.extend(customParseFormat)
-puppeteer.use(AdblockerPlugin())
 
 export class OLX implements ScraperInterface {
   url: string;
@@ -49,7 +44,7 @@ export class OLX implements ScraperInterface {
   }
 
   async showNumbers(page: Puppeteer.Page): Promise<void> {
-    page.evaluate((descriptionSelector, profileSelector) => {
+    await page.evaluate((descriptionSelector, profileSelector) => {
       document.querySelector(descriptionSelector).click()
       document.querySelector(profileSelector).click()
     }, '.showPhoneButton', '#contact_methods .link-phone');
@@ -80,6 +75,9 @@ export class OLX implements ScraperInterface {
       for (const e of elements) {
         const text = e.childNodes[1].querySelector('strong').innerText;
         switch (e.childNodes[1].querySelector('span')?.innerText) {
+          case 'Объявление от':
+            listing['publisher_type'] = text;
+            break;
           case 'Этаж':
             listing['floor'] = Number(text);
             break;
@@ -108,7 +106,6 @@ export class OLX implements ScraperInterface {
     return new ListingEntity(listingEntity as ListingEntity);
   }
 
-
   async uploadImages() {
     console.log(this.storedImagePaths);
   }
@@ -118,9 +115,11 @@ export class OLX implements ScraperInterface {
       () => Number(document.querySelector('.descgallery__counter')
         .getAttribute('data-to')
         .replace('0', '')));
-    await page.waitFor(2000);
-    for (const x of [...Array(totalImages - 1)]) {
-      await page.click('.descgallery__next');
+    // TODO: make something with it
+    await page.waitFor(5000);
+    for await (const x of [...Array(totalImages - 1)]) {
+      await page.click('.descImageNext');
+      console.log('click');
       // without that on('response', dont run
       await this.page.waitForResponse(response => response.url().includes(';s=1000x700') && response.status() === 200);
     }
@@ -130,7 +129,6 @@ export class OLX implements ScraperInterface {
     */
     this.isLastImage = true;
   }
-
 
   async interceptImages() {
     await this.page.on('response', async (response) => {
@@ -146,10 +144,18 @@ export class OLX implements ScraperInterface {
     });
   }
 
+  isPrivatePerson(listingEntity: ListingEntity) {
+    return listingEntity.publisher_type === 'Частного лица';
+  }
+
   async scrape(): Promise<ListingEntity> {
     await this.interceptImages();
     await this.page.goto(this.url, {timeout: 60000});
     const listingEntity = await this.getMetadata(this.page);
+    // TODO: maybe better to raise custom exception
+    if (!this.isPrivatePerson(listingEntity)) {
+      return listingEntity;
+    }
     await this.slideImages(this.page);
     listingEntity.title = await this.getTitle(this.page);
     listingEntity.price = await this.getPrice(this.page);
@@ -163,13 +169,21 @@ export class OLX implements ScraperInterface {
 
   async store() {
     const listingEntity = await this.scrape();
-    try {
-      const saved = await this.storage.save(listingEntity);
-      console.log('');
-      console.log(saved);
-    } catch (e) {
-      console.log(e);
+    if (this.isPrivatePerson(listingEntity)) {
+      try {
+        const saved = await this.storage.save(listingEntity);
+        console.log('saved');
+        console.log(saved);
+        return false;
+      } catch (e) {
+        console.log(e);
+        return false;
+      }
+    } else {
+      console.log('data not saved cause person os not private');
+      return false;
     }
+
   }
 
 }

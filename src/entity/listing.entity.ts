@@ -19,6 +19,8 @@ export class ListingEntity {
   @Column("text")
   address: string;
 
+  publisher_type: string;
+
   @Column("int")
   year: number;
 
@@ -72,6 +74,7 @@ export class ListingEntity {
       this.title = listingEntity.title;
       this.address = listingEntity.address;
       this.year = listingEntity.year;
+      this.publisher_type = listingEntity.publisher_type;
       this.description = listingEntity.description;
       this.price = listingEntity.price;
       this.price = listingEntity.price;
