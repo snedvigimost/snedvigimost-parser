@@ -5,7 +5,8 @@ import {ListingEntity} from "./entity/listing.entity";
 import {ImageEntity} from "./entity/image.entity";
 import {ApiStorage} from "./stor/api";
 import {DatabaseStorage} from "./stor/database";
-import {FileStorage} from "./stor/file";
+import {FileStorage} from "./image-stor/file";
+import {DropboxStorage} from "./image-stor/dropbox-storage";
 const axios = require('axios');
 
 const puppeteer = require('puppeteer');
@@ -21,12 +22,14 @@ const puppeteer = require('puppeteer');
   const page = await browser.newPage();
   await page.setViewport({ width: 0, height: 0 });
   const connection = await createConnection();
-  // const url = 'https://www.olx.ua/obyavlenie/bez-komissii-sdam-svoyu-3-h-komnatnuyu-kvartiru-IDHmsXk.html';
+  const url = 'https://www.olx.ua/obyavlenie/bez-komissii-sdam-svoyu-3-h-komnatnuyu-kvartiru-IDHmsXk.html';
   // not private person
-  const url = 'https://www.olx.ua/obyavlenie/sevastopolskaya-pl-ernsta-16-spalnya-studiya-v-prestizhnom-dome-IDI6UUO.html#d0a51f9bff;promoted';
-  // // const url = 'https://dom.ria.com/ru/realty-dolgosrochnaya -arenda-kvartira-cherkassy-tsentr-17133629.html';
-  const fileStorage = new FileStorage();
-  const olx = new OLX(page, new DatabaseStorage(connection), url, fileStorage);
+  // const url = 'https://www.olx.ua/obyavlenie/sevastopolskaya-pl-ernsta-16-spalnya-studiya-v-prestizhnom-dome-IDI6UUO.html#d0a51f9bff;promoted';
+  // const url = 'https://dom.ria.com/ru/realty-dolgosrochnaya -arenda-kvartira-cherkassy-tsentr-17133629.html';
+  const fileStorage = new FileStorage('images');
+  const dropboxStorage = new DropboxStorage('/photos');
+  const databaseStorage =  new DatabaseStorage(connection)
+  const olx = new OLX(page, databaseStorage, url, fileStorage, dropboxStorage);
   // // const olx = new Ria(browser, connection, url);
   // console.log(await olx.scrape());
   await olx.store();

@@ -7,11 +7,13 @@ import * as customParseFormat from 'dayjs/plugin/customParseFormat';
 import {Dayjs} from "dayjs";
 import * as Puppeteer from "puppeteer-extra/dist/puppeteer";
 
-import {FileStorage} from "../stor/file";
+import {FileStorage} from "../image-stor/file";
 import {ListingEntity} from "../entity/listing.entity";
 
 import {ScraperInterface} from "./scraper-interface";
 import {StorageInterface} from "../stor/storage-interface";
+import {DropboxStorage} from "../image-stor/dropbox-storage";
+import {ImageEntity} from "../entity/image.entity";
 
 dayjs.locale('ru')
 dayjs.extend(customParseFormat)
@@ -21,13 +23,15 @@ export class OLX implements ScraperInterface {
   isLastImage = false;
   page: Puppeteer.Page;
   fileStorage: FileStorage;
+  uploader: DropboxStorage;
   storage: StorageInterface;
   storedImagePaths: string[] = [];
 
-  constructor(page: Puppeteer.Page, storage: StorageInterface, url: string, fileStorage: FileStorage) {
+  constructor(page: Puppeteer.Page, storage: StorageInterface, url: string, fileStorage: FileStorage, uploader: DropboxStorage) {
     this.url = url;
     this.page = page;
     this.storage = storage;
+    this.uploader = uploader;
     this.fileStorage = fileStorage;
   }
 
@@ -106,8 +110,17 @@ export class OLX implements ScraperInterface {
     return new ListingEntity(listingEntity as ListingEntity);
   }
 
-  async uploadImages() {
+  async uploadImages(listingEntity) {
     console.log(this.storedImagePaths);
+    const imageEntities = [];
+    for (const imagePath of this.storedImagePaths) {
+      const image = new ImageEntity(path.join(this.uploader.folder, imagePath));
+      await this.storage.save(image);
+      const uploadResponse = await this.uploader.save(path.join(this.fileStorage.folder, imagePath), imagePath);
+      console.log(uploadResponse);
+      imageEntities.push(image);
+    }
+    listingEntity.images = imageEntities;
   }
 
   async slideImages(page: Puppeteer.Page) {
@@ -119,27 +132,17 @@ export class OLX implements ScraperInterface {
     await page.waitFor(5000);
     for await (const x of [...Array(totalImages - 1)]) {
       await page.click('.descImageNext');
-      console.log('click');
       // without that on('response', dont run
       await this.page.waitForResponse(response => response.url().includes(';s=1000x700') && response.status() === 200);
     }
-    /*
-     if replace that with await this.uploadImages(); last item will not be pushed to list
-     so firstly called waitForResponse than on('response',
-    */
-    this.isLastImage = true;
   }
 
   async interceptImages() {
     await this.page.on('response', async (response) => {
       if (response.url().includes(';s=1000x700') && response.status() === 200) {
         const imageFileName = `${new URL(response.url()).pathname.split('/')[3]}.jpeg`;
-        const imagePath = path.join('images', imageFileName);
-        await this.fileStorage.save(imagePath, await response.buffer());
-        this.storedImagePaths.push(imagePath);
-        if (this.isLastImage) {
-          await this.uploadImages();
-        }
+        await this.fileStorage.save(imageFileName, await response.buffer());
+        this.storedImagePaths.push(imageFileName);
       }
     });
   }
@@ -157,6 +160,9 @@ export class OLX implements ScraperInterface {
       return listingEntity;
     }
     await this.slideImages(this.page);
+    // TODO: better way for waiting last image
+    await this.page.waitFor(1000);
+    await this.uploadImages(listingEntity);
     listingEntity.title = await this.getTitle(this.page);
     listingEntity.price = await this.getPrice(this.page);
     await this.showNumbers(this.page);

@@ -10,7 +10,7 @@ export class DatabaseStorage implements StorageInterface {
     this.connection = connection;
   }
 
-  async save(listing: ListingEntity): Promise<ListingEntity> {
+  async save(listing: any): Promise<any> {
     return await this.connection.manager.save(listing);
   }
 }
