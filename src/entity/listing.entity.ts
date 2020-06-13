@@ -19,6 +19,12 @@ export class ListingEntity {
   @Column("text")
   address: string;
 
+  @Column("text")
+  url: string;
+
+  @Column("text")
+  source: string;
+
   publisher_type: string;
 
   @Column("int")

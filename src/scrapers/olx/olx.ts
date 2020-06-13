@@ -21,6 +21,7 @@ dayjs.extend(customParseFormat)
 
 export class OLX implements ScraperInterface {
   config: Config;
+  source = 'olx';
   storedImagePaths: string[] = [];
 
   constructor(config: Config) {
@@ -157,6 +158,8 @@ export class OLX implements ScraperInterface {
     if (!this.isPrivatePerson(listingEntity)) {
       return listingEntity;
     }
+    listingEntity.source = this.source;
+    listingEntity.url = this.config.url;
     await this.slideImages(this.config.page);
     // TODO: better way for waiting last image
     await this.config.page.waitFor(1000);
