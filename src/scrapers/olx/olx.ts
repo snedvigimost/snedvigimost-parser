@@ -7,14 +7,12 @@ import * as customParseFormat from 'dayjs/plugin/customParseFormat';
 import {Dayjs} from "dayjs";
 import * as Puppeteer from "puppeteer-extra/dist/puppeteer";
 
-import {FileStorage} from "../../image-stor/file";
 import {ListingEntity} from "../../entity/listing.entity";
 
 import {ScraperInterface} from "../scraper-interface";
-import {StorageInterface} from "../../stor/storage-interface";
-import {DropboxStorage} from "../../image-stor/dropbox-storage";
 import {ImageEntity} from "../../entity/image.entity";
 import {Config} from "../config";
+const ProgressBar = require('progress');
 
 dayjs.locale('ru')
 dayjs.extend(customParseFormat)
@@ -109,12 +107,13 @@ export class OLX implements ScraperInterface {
 
   async uploadImages(listingEntity: ListingEntity) {
     const imageEntities = [];
+    const bar = new ProgressBar('Uploading images [:bar] :current/:total', { total: this.storedImagePaths.length });
     for (const imagePath of this.storedImagePaths) {
       const image = new ImageEntity(path.join(this.config.uploader.folder, imagePath));
       await this.config.storage.save(image);
-      const uploadResponse = await this.config.uploader.save(path.join(this.config.fileStorage.folder, imagePath), imagePath);
-      console.log(uploadResponse);
+      await this.config.uploader.save(path.join(this.config.fileStorage.folder, imagePath), imagePath);
       imageEntities.push(image);
+      bar.tick();
     }
     listingEntity.images = imageEntities;
   }
