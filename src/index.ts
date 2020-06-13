@@ -47,7 +47,7 @@ function sleep(ms) {
   }
 
   const olx = new OlxWrapper(config);
-  await olx.parsePagable();
+  await olx.parsePageable();
 
   // console.log(allUrls);
 

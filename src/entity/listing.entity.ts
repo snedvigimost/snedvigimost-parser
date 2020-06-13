@@ -1,14 +1,14 @@
 import "reflect-metadata";
 
 import {Dayjs} from "dayjs";
-import {Entity, Column, PrimaryGeneratedColumn, JoinTable, ManyToMany} from "typeorm";
+import {Entity, Column, PrimaryGeneratedColumn, JoinTable, ManyToMany, BaseEntity} from "typeorm";
 
 import {ImageEntity} from "./image.entity";
 
 @Entity({
   name: 'listings_listing'
 })
-export class ListingEntity {
+export class ListingEntity extends BaseEntity {
 
   @PrimaryGeneratedColumn()
   id: number;
@@ -76,6 +76,7 @@ export class ListingEntity {
   // type: string;
 
   constructor(listingEntity?: ListingEntity) {
+    super();
     if (listingEntity) {
       this.title = listingEntity.title;
       this.address = listingEntity.address;
