@@ -7,32 +7,24 @@ import * as customParseFormat from 'dayjs/plugin/customParseFormat';
 import {Dayjs} from "dayjs";
 import * as Puppeteer from "puppeteer-extra/dist/puppeteer";
 
-import {FileStorage} from "../image-stor/file";
-import {ListingEntity} from "../entity/listing.entity";
+import {FileStorage} from "../../image-stor/file";
+import {ListingEntity} from "../../entity/listing.entity";
 
-import {ScraperInterface} from "./scraper-interface";
-import {StorageInterface} from "../stor/storage-interface";
-import {DropboxStorage} from "../image-stor/dropbox-storage";
-import {ImageEntity} from "../entity/image.entity";
+import {ScraperInterface} from "../scraper-interface";
+import {StorageInterface} from "../../stor/storage-interface";
+import {DropboxStorage} from "../../image-stor/dropbox-storage";
+import {ImageEntity} from "../../entity/image.entity";
+import {Config} from "../config";
 
 dayjs.locale('ru')
 dayjs.extend(customParseFormat)
 
 export class OLX implements ScraperInterface {
-  url: string;
-  isLastImage = false;
-  page: Puppeteer.Page;
-  fileStorage: FileStorage;
-  uploader: DropboxStorage;
-  storage: StorageInterface;
+  config: Config;
   storedImagePaths: string[] = [];
 
-  constructor(page: Puppeteer.Page, storage: StorageInterface, url: string, fileStorage: FileStorage, uploader: DropboxStorage) {
-    this.url = url;
-    this.page = page;
-    this.storage = storage;
-    this.uploader = uploader;
-    this.fileStorage = fileStorage;
+  constructor(config: Config) {
+    this.config = config;
   }
 
   async getTitle(page: Puppeteer.Page): Promise<string> {
@@ -49,8 +41,12 @@ export class OLX implements ScraperInterface {
 
   async showNumbers(page: Puppeteer.Page): Promise<void> {
     await page.evaluate((descriptionSelector, profileSelector) => {
-      document.querySelector(descriptionSelector).click()
       document.querySelector(profileSelector).click()
+      try {
+         document.querySelector(descriptionSelector).click()
+      } catch (e) {
+        console.log('no number in description');
+      }
     }, '.showPhoneButton', '#contact_methods .link-phone');
   }
 
@@ -110,13 +106,12 @@ export class OLX implements ScraperInterface {
     return new ListingEntity(listingEntity as ListingEntity);
   }
 
-  async uploadImages(listingEntity) {
-    console.log(this.storedImagePaths);
+  async uploadImages(listingEntity: ListingEntity) {
     const imageEntities = [];
     for (const imagePath of this.storedImagePaths) {
-      const image = new ImageEntity(path.join(this.uploader.folder, imagePath));
-      await this.storage.save(image);
-      const uploadResponse = await this.uploader.save(path.join(this.fileStorage.folder, imagePath), imagePath);
+      const image = new ImageEntity(path.join(this.config.uploader.folder, imagePath));
+      await this.config.storage.save(image);
+      const uploadResponse = await this.config.uploader.save(path.join(this.config.fileStorage.folder, imagePath), imagePath);
       console.log(uploadResponse);
       imageEntities.push(image);
     }
@@ -133,18 +128,20 @@ export class OLX implements ScraperInterface {
     for await (const x of [...Array(totalImages - 1)]) {
       await page.click('.descImageNext');
       // without that on('response', dont run
-      await this.page.waitForResponse(response => response.url().includes(';s=1000x700') && response.status() === 200);
+      await this.config.page.waitForResponse(
+        response => response.url().includes(';s=1000x700')
+          && response.status() === 200
+      );
     }
   }
 
-  async interceptImages() {
-    await this.page.on('response', async (response) => {
-      if (response.url().includes(';s=1000x700') && response.status() === 200) {
-        const imageFileName = `${new URL(response.url()).pathname.split('/')[3]}.jpeg`;
-        await this.fileStorage.save(imageFileName, await response.buffer());
-        this.storedImagePaths.push(imageFileName);
-      }
-    });
+  interceptImages = async (interceptedResponse) => {
+    if (interceptedResponse.url().includes(';s=1000x700') && interceptedResponse.status() === 200) {
+      const imageFileName = `${new URL(interceptedResponse.url()).pathname.split('/')[3]}.jpeg`;
+      console.log(this.config.fileStorage);
+      await this.config.fileStorage.save(imageFileName, await interceptedResponse.buffer());
+      this.storedImagePaths.push(imageFileName);
+    }
   }
 
   isPrivatePerson(listingEntity: ListingEntity) {
@@ -152,24 +149,27 @@ export class OLX implements ScraperInterface {
   }
 
   async scrape(): Promise<ListingEntity> {
-    await this.interceptImages();
-    await this.page.goto(this.url, {timeout: 60000});
-    const listingEntity = await this.getMetadata(this.page);
+    this.config.page.on('response', this.interceptImages);
+
+    await this.config.page.goto(this.config.url, {timeout: 60000});
+    const listingEntity = await this.getMetadata(this.config.page);
     // TODO: maybe better to raise custom exception
     if (!this.isPrivatePerson(listingEntity)) {
       return listingEntity;
     }
-    await this.slideImages(this.page);
+    await this.slideImages(this.config.page);
     // TODO: better way for waiting last image
-    await this.page.waitFor(1000);
+    await this.config.page.waitFor(1000);
     await this.uploadImages(listingEntity);
-    listingEntity.title = await this.getTitle(this.page);
-    listingEntity.price = await this.getPrice(this.page);
-    await this.showNumbers(this.page);
-    listingEntity.description = await this.getDescription(this.page);
-    listingEntity.publication_date = await this.getPublicationDate(this.page);
-    await this.page.waitFor(1000);
-    listingEntity.phone_number = await this.getPhoneNumber(this.page);
+    listingEntity.title = await this.getTitle(this.config.page);
+    listingEntity.price = await this.getPrice(this.config.page);
+    await this.showNumbers(this.config.page);
+    listingEntity.description = await this.getDescription(this.config.page);
+    listingEntity.publication_date = await this.getPublicationDate(this.config.page);
+    await this.config.page.waitFor(1000);
+    listingEntity.phone_number = await this.getPhoneNumber(this.config.page);
+
+    this.config.page.removeListener('response', this.interceptImages);
     return listingEntity;
   };
 
@@ -177,7 +177,7 @@ export class OLX implements ScraperInterface {
     const listingEntity = await this.scrape();
     if (this.isPrivatePerson(listingEntity)) {
       try {
-        const saved = await this.storage.save(listingEntity);
+        const saved = await this.config.storage.save(listingEntity);
         console.log('saved');
         console.log(saved);
         return false;
@@ -186,7 +186,7 @@ export class OLX implements ScraperInterface {
         return false;
       }
     } else {
-      console.log('data not saved cause person os not private');
+      console.log('data not saved cause person is not private');
       return false;
     }
 
