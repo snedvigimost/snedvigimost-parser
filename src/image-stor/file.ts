@@ -13,7 +13,6 @@ export class FileStorage {
     try {
       const imagePath = path.join(this.folder, imageFileName);
       await fsPromises.writeFile(imagePath, file);
-      console.log(`The ${imagePath} was saved!`);
     } catch (e) {
       console.log(e);
     }

@@ -12,7 +12,10 @@ import {ListingEntity} from "../../entity/listing.entity";
 import {ScraperInterface} from "../scraper-interface";
 import {ImageEntity} from "../../entity/image.entity";
 import {Config} from "../config";
-const ProgressBar = require('progress');
+
+const cliProgress = require('cli-progress');
+const signale = require('signale');
+const _colors = require('colors');
 
 dayjs.locale('ru')
 dayjs.extend(customParseFormat)
@@ -42,7 +45,7 @@ export class OLX implements ScraperInterface {
     await page.evaluate((descriptionSelector, profileSelector) => {
       document.querySelector(profileSelector).click()
       try {
-         document.querySelector(descriptionSelector).click()
+        document.querySelector(descriptionSelector).click()
       } catch (e) {
         console.log('no number in description');
       }
@@ -107,14 +110,20 @@ export class OLX implements ScraperInterface {
 
   async uploadImages(listingEntity: ListingEntity) {
     const imageEntities = [];
-    const bar = new ProgressBar('Uploading images [:bar] :current/:total', { total: this.storedImagePaths.length });
+    const pb = new cliProgress.SingleBar({
+      format: 'Image uploading |' + _colors.cyan('{bar}') + '| {percentage}% || {value}/{total}',
+    }, cliProgress.Presets.shades_classic);
+    console.log('');
+    pb.start(this.storedImagePaths.length, 0);
+
     for (const imagePath of this.storedImagePaths) {
       const image = new ImageEntity(path.join(this.config.uploader.folder, imagePath));
       await this.config.storage.save(image);
       await this.config.uploader.save(path.join(this.config.fileStorage.folder, imagePath), imagePath);
       imageEntities.push(image);
-      bar.tick();
+      pb.increment();
     }
+    pb.stop();
     listingEntity.images = imageEntities;
   }
 
@@ -138,7 +147,6 @@ export class OLX implements ScraperInterface {
   interceptImages = async (interceptedResponse) => {
     if (interceptedResponse.url().includes(';s=1000x700') && interceptedResponse.status() === 200) {
       const imageFileName = `${new URL(interceptedResponse.url()).pathname.split('/')[3]}.jpeg`;
-      console.log(this.config.fileStorage);
       await this.config.fileStorage.save(imageFileName, await interceptedResponse.buffer());
       this.storedImagePaths.push(imageFileName);
     }
@@ -180,7 +188,7 @@ export class OLX implements ScraperInterface {
     if (this.isPrivatePerson(listingEntity)) {
       try {
         const saved = await this.config.storage.save(listingEntity);
-        console.log('saved');
+        signale.success(`${this.config.url} saved`);
         console.log(saved);
         return false;
       } catch (e) {
@@ -188,7 +196,8 @@ export class OLX implements ScraperInterface {
         return false;
       }
     } else {
-      console.log('data not saved cause person is not private');
+      console.log('');
+      signale.debug(`${this.config.url} data not saved cause person is not private`);
       return false;
     }
 

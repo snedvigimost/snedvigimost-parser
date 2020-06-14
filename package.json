@@ -19,19 +19,18 @@
   "homepage": "https://github.com/andriyor/snedvigimost-parser#readme",
   "dependencies": {
     "axios": "^0.19.2",
-    "core-js": "^3.6.5",
-    "core-js-pure": "^3.6.5",
+    "cli-progress": "^3.8.2",
+    "colors": "^1.4.0",
     "dayjs": "^1.8.28",
     "dotenv": "^8.2.0",
     "dropbox": "^4.0.30",
     "isomorphic-fetch": "^2.2.1",
     "pg": "^8.2.1",
-    "playwright": "^1.0.2",
-    "progress": "^2.0.3",
     "puppeteer": "^3.3.0",
     "puppeteer-extra": "^3.1.9",
     "puppeteer-extra-plugin-adblocker": "^2.11.3",
     "reflect-metadata": "^0.1.13",
+    "signale": "^1.4.0",
     "typeorm": "^0.2.25"
   },
   "devDependencies": {
