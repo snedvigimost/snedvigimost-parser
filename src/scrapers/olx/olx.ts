@@ -72,35 +72,26 @@ export class OLX implements ScraperInterface {
 
   async getMetadata(page: Puppeteer.Page): Promise<ListingEntity> {
     const listingEntity = await page.evaluate((selector) => {
+      const getMeters = (text) => Number(text.replace(' м²', ''))
+      const metadata = {
+        'Объявление от': (listing, text) => listing['publisher_type'] = text,
+        'Этаж': (listing, text) => listing['floor'] = Number(text),
+        'Этажность': (listing, text) => listing['floor_in_house'] = Number(text),
+        'Количество комнат': (listing, text) => listing['rooms_count'] = Number(text),
+        'Общая площадь': (listing, text) => listing['total_area'] = getMeters(text),
+        'Площадь кухни': (listing, text) => listing['kitchen_area'] = getMeters(text),
+        'Тип объекта': (listing, text) => listing['type'] = text,
+      }
+
       const elements = document.querySelectorAll(selector);
       const listing = {};
       for (const e of elements) {
         const text = e.childNodes[1].querySelector('strong').innerText;
-        switch (e.childNodes[1].querySelector('span')?.innerText) {
-          case 'Объявление от':
-            listing['publisher_type'] = text;
-            break;
-          case 'Этаж':
-            listing['floor'] = Number(text);
-            break;
-          case 'Этажность':
-            listing['floor_in_house'] = Number(text);
-            break;
-          case 'Количество комнат':
-            listing['rooms_count'] = Number(text);
-            break;
-          case 'Общая площадь':
-            listing['total_area'] = Number(text.replace(' м²', ''));
-            break;
-          case 'Площадь кухни':
-            listing['kitchen_area'] = Number(text.replace(' м²', ''));
-            break;
-          case 'Тип объекта':
-            listing['type'] = text;
-            break;
-          default:
-            console.log('This animal will not.');
-            break;
+        const key = e.childNodes[1].querySelector('span')?.innerText;
+        try {
+          metadata[key](listing, text);
+        } catch (e) {
+          console.log('no function for such key');
         }
       }
       return listing;
