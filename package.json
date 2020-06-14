@@ -23,7 +23,7 @@
     "colors": "^1.4.0",
     "dayjs": "^1.8.28",
     "dotenv": "^8.2.0",
-    "dropbox": "^4.0.30",
+    "dropbox": "^5.1.0",
     "isomorphic-fetch": "^2.2.1",
     "pg": "^8.2.1",
     "puppeteer": "^3.3.0",
@@ -34,9 +34,8 @@
     "typeorm": "^0.2.25"
   },
   "devDependencies": {
-    "@types/node": "^14.0.9",
+    "@types/node": "^14.0.13",
     "ts-node": "^8.10.2",
-    "ts-node-dev": "^1.0.0-pre.44",
-    "typescript": "^3.9.3"
+    "typescript": "^3.9.5"
   }
 }
