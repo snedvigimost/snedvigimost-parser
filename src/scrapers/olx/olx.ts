@@ -3,19 +3,18 @@ import * as path from "path";
 import * as dayjs from 'dayjs';
 
 require('dayjs/locale/ru');
-import * as customParseFormat from 'dayjs/plugin/customParseFormat';
 import {Dayjs} from "dayjs";
+import * as customParseFormat from 'dayjs/plugin/customParseFormat';
 import * as Puppeteer from "puppeteer-extra/dist/puppeteer";
+const _colors = require('colors');
+const signale = require('signale');
+const cliProgress = require('cli-progress');
 
 import {ListingEntity} from "../../entity/listing.entity";
 
 import {ScraperInterface} from "../scraper-interface";
 import {ImageEntity} from "../../entity/image.entity";
 import {Config} from "../config";
-
-const cliProgress = require('cli-progress');
-const signale = require('signale');
-const _colors = require('colors');
 
 dayjs.locale('ru')
 dayjs.extend(customParseFormat)

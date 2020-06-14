@@ -4,6 +4,8 @@ import {Ria} from "./scrapers/ria";
 import {ListingEntity} from "./entity/listing.entity";
 import {ImageEntity} from "./entity/image.entity";
 import {ApiStorage} from "./stor/api";
+
+const schedule = require('node-schedule');
 import {DatabaseStorage} from "./stor/database";
 import {FileStorage} from "./image-stor/file";
 import {DropboxStorage} from "./image-stor/dropbox-storage";
@@ -28,7 +30,7 @@ function sleep(ms) {
 (async () => {
   const browser = await puppeteer.launch({headless: false, args: ['--start-maximized', '--window-size=1910,1000']});
   const page = await browser.newPage();
-  await page.setViewport({ width: 0, height: 0 });
+  await page.setViewport({width: 0, height: 0});
   const connection = await createConnection();
   const url = 'https://www.olx.ua/obyavlenie/bez-komissii-sdam-svoyu-3-h-komnatnuyu-kvartiru-IDHmsXk.html';
   // not private person
@@ -36,7 +38,7 @@ function sleep(ms) {
   // const url = 'https://dom.ria.com/ru/realty-dolgosrochnaya -arenda-kvartira-cherkassy-tsentr-17133629.html';
   const fileStorage = new FileStorage('images');
   const dropboxStorage = new DropboxStorage('/photos');
-  const databaseStorage =  new DatabaseStorage(connection)
+  const databaseStorage = new DatabaseStorage(connection)
   const config: Config = {
     browser: browser,
     page: page,
@@ -48,6 +50,11 @@ function sleep(ms) {
 
   const olx = new OlxWrapper(config);
   await olx.parsePageable();
+
+  // schedule.scheduleJob('0 * * * *', async () => {
+  //   console.log('run scheduleJob');
+  //   await olx.parsePageable();
+  // });
 
   // console.log(allUrls);
 
