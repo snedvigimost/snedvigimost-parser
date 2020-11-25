@@ -1,4 +1,4 @@
-import * as Puppeteer from "puppeteer-extra/dist/puppeteer";
+import * as Puppeteer from "puppeteer";
 import {ListingEntity} from "../entity/listing.entity";
 import {StorageInterface} from "../stor/storage-interface";
 import {Config} from "./config";

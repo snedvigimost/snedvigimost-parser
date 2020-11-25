@@ -3,7 +3,7 @@ import "reflect-metadata";
 import {Entity, Column, PrimaryGeneratedColumn} from "typeorm";
 
 @Entity({
-  name: 'images_image'
+  name: 'image'
 })
 export class ImageEntity {
 

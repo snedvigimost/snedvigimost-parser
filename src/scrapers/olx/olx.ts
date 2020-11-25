@@ -5,7 +5,7 @@ import * as dayjs from 'dayjs';
 require('dayjs/locale/ru');
 import {Dayjs} from "dayjs";
 import * as customParseFormat from 'dayjs/plugin/customParseFormat';
-import * as Puppeteer from "puppeteer-extra/dist/puppeteer";
+import * as Puppeteer from "puppeteer";
 
 const _colors = require('colors');
 const signale = require('signale');
@@ -127,7 +127,7 @@ export class OLX implements ScraperInterface {
           .getAttribute('data-to')
           .replace('0', '')));
       // TODO: make something with it
-      await page.waitFor(5000);
+      await page.waitForTimeout(5000);
       for await (const x of [...Array(totalImages - 1)]) {
         await page.click('.descImageNext');
         // without that on('response', dont run
@@ -164,14 +164,14 @@ export class OLX implements ScraperInterface {
     listingEntity.url = this.config.url;
     await this.slideImages(this.config.page);
     // TODO: better way for waiting last image
-    await this.config.page.waitFor(1000);
+    await this.config.page.waitForTimeout(1000);
     await this.uploadImages(listingEntity);
     listingEntity.title = await this.getTitle(this.config.page);
     listingEntity.price = await this.getPrice(this.config.page);
     await this.showNumbers(this.config.page);
     listingEntity.description = await this.getDescription(this.config.page);
     listingEntity.source_publication_date = await this.getPublicationDate(this.config.page);
-    await this.config.page.waitFor(1000);
+    await this.config.page.waitForTimeout(1000);
     listingEntity.phone_number = await this.getPhoneNumber(this.config.page);
 
     this.config.page.removeListener('response', this.interceptImages);

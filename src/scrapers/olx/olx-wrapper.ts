@@ -1,4 +1,4 @@
-import * as Puppeteer from "puppeteer-extra/dist/puppeteer";
+import * as Puppeteer from "puppeteer";
 
 import {OLX} from "./olx";
 import {Config} from "../config";

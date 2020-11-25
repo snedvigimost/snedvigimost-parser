@@ -11,10 +11,9 @@ import {FileStorage} from "./image-stor/file";
 import {DropboxStorage} from "./image-stor/dropbox-storage";
 
 const puppeteer = require('puppeteer');
-import * as Puppeteer from "puppeteer-extra/dist/puppeteer";
+import * as Puppeteer from "puppeteer";
 import {Config} from "./scrapers/config";
 import {OlxWrapper} from "./scrapers/olx/olx-wrapper";
-// const puppeteer = require('puppeteer-extra')
 
 // Add adblocker plugin, which will transparently block ads in all pages you
 // create using puppeteer.

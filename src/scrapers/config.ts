@@ -1,4 +1,4 @@
-import * as Puppeteer from "puppeteer-extra/dist/puppeteer";
+import * as Puppeteer from "puppeteer";
 
 import {FileStorage} from "../image-stor/file";
 import {DropboxStorage} from "../image-stor/dropbox-storage";
