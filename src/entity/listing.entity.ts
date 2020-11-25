@@ -6,97 +6,97 @@ import {Entity, Column, PrimaryGeneratedColumn, JoinTable, ManyToMany, BaseEntit
 import {ImageEntity} from "./image.entity";
 
 @Entity({
-    name: 'listing'
+  name: 'listing'
 })
 export class ListingEntity extends BaseEntity {
 
-    @PrimaryGeneratedColumn()
-    id: number;
+  @PrimaryGeneratedColumn()
+  id: number;
 
-    @Column("text")
-    title: string;
+  @Column("text")
+  title: string;
 
-    @Column("text")
-    address: string;
+  @Column("text")
+  address: string;
 
-    @Column("text")
-    url: string;
+  @Column("text")
+  url: string;
 
-    @Column("text")
-    source: string;
+  @Column("text")
+  source: string;
 
-    publisher_type: string;
+  publisher_type: string;
 
-    @Column("int")
-    year: number;
+  @Column("int")
+  year: number;
 
-    @Column("text")
-    description: string;
+  @Column("text")
+  description: string;
 
-    @Column("text")
-    phone_number: string;
+  @Column("text")
+  phone_number: string;
 
-    @Column("int")
-    price: number;
+  @Column("int")
+  price: number;
 
-    @Column("int")
-    rooms_count: number;
+  @Column("int")
+  rooms_count: number;
 
-    @Column("int")
-    total_area: number;
+  @Column("int")
+  total_area: number;
 
-    @Column("int")
-    living_area: number;
+  @Column("int")
+  living_area: number;
 
-    @Column("int")
-    kitchen_area: number;
+  @Column("int")
+  kitchen_area: number;
 
-    @Column("int")
-    floor: number;
+  @Column("int")
+  floor: number;
 
-    @Column("int")
-    floor_in_house: number;
+  @Column("int")
+  floor_in_house: number;
 
-    @Column("timestamp")
-    publication_date: Dayjs;
+  @Column("timestamp")
+  publication_date: Dayjs;
 
-    @Column("timestamp")
-    source_publication_date: Dayjs;
+  @Column("timestamp")
+  source_publication_date: Dayjs;
 
-    @ManyToMany(() => ImageEntity)
-    @JoinTable({
-        name: 'listing_images',
-        joinColumns: [
-            {name: 'listing_id'}
-        ],
-        inverseJoinColumns: [
-            {name: 'image_id'}
-        ]
-    })
-    images: ImageEntity[];
+  @ManyToMany(() => ImageEntity)
+  @JoinTable({
+    name: 'listing_images',
+    joinColumns: [
+      {name: 'listing_id'}
+    ],
+    inverseJoinColumns: [
+      {name: 'image_id'}
+    ]
+  })
+  images: ImageEntity[];
 
-    // @Column("text")
-    // type: string;
+  // @Column("text")
+  // type: string;
 
-    constructor(listingEntity?: ListingEntity) {
-        super();
-        if (listingEntity) {
-            this.title = listingEntity.title;
-            this.address = listingEntity.address;
-            this.year = listingEntity.year;
-            this.publisher_type = listingEntity.publisher_type;
-            this.description = listingEntity.description;
-            this.price = listingEntity.price;
-            this.price = listingEntity.price;
-            this.rooms_count = listingEntity.rooms_count;
-            this.total_area = listingEntity.total_area;
-            this.living_area = listingEntity.living_area;
-            this.kitchen_area = listingEntity.kitchen_area;
-            this.floor = listingEntity.floor;
-            this.floor_in_house = listingEntity.floor_in_house;
-            this.phone_number = listingEntity.phone_number;
-            this.publication_date = listingEntity.publication_date;
-            this.source_publication_date = listingEntity.source_publication_date;
-        }
+  constructor(listingEntity?: ListingEntity) {
+    super();
+    if (listingEntity) {
+      this.title = listingEntity.title;
+      this.address = listingEntity.address;
+      this.year = listingEntity.year;
+      this.publisher_type = listingEntity.publisher_type;
+      this.description = listingEntity.description;
+      this.price = listingEntity.price;
+      this.price = listingEntity.price;
+      this.rooms_count = listingEntity.rooms_count;
+      this.total_area = listingEntity.total_area;
+      this.living_area = listingEntity.living_area;
+      this.kitchen_area = listingEntity.kitchen_area;
+      this.floor = listingEntity.floor;
+      this.floor_in_house = listingEntity.floor_in_house;
+      this.phone_number = listingEntity.phone_number;
+      this.publication_date = listingEntity.publication_date;
+      this.source_publication_date = listingEntity.source_publication_date;
     }
+  }
 }

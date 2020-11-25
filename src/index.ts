@@ -32,10 +32,14 @@ function sleep(ms) {
   const page = await browser.newPage();
   await page.setViewport({width: 0, height: 0});
   const connection = await createConnection();
-  const url = 'https://www.olx.ua/obyavlenie/bez-komissii-sdam-svoyu-3-h-komnatnuyu-kvartiru-IDHmsXk.html';
+  // const url = 'https://www.olx.ua/obyavlenie/bez-komissii-sdam-svoyu-3-h-komnatnuyu-kvartiru-IDHmsXk.html';
   // not private person
   // const url = 'https://www.olx.ua/obyfileStorageavlenie/sevastopolskaya-pl-ernsta-16-spalnya-studiya-v-prestizhnom-dome-IDI6UUO.html#d0a51f9bff;promoted';
   // const url = 'https://dom.ria.com/ru/realty-dolgosrochnaya -arenda-kvartira-cherkassy-tsentr-17133629.html';
+  const url = 'https://www.olx.ua/obyavlenie/sdaetsya-komnata-v-2-h-komn-pr-svobody-podolskiy-r-n-IDJ4Fg2.html#198eafd9aa';
+  // const url = 'https://www.olx.ua/obyavlenie/sdam-1k-kvartiru-metro-obolon-IDJVfcJ.html#198eafd9aa';
+
+
   const fileStorage = new FileStorage('images');
   const dropboxStorage = new DropboxStorage('/photos');
   const databaseStorage = new DatabaseStorage(connection)
@@ -48,8 +52,8 @@ function sleep(ms) {
     uploader: dropboxStorage,
   }
 
-  const olx = new OlxWrapper(config);
-  await olx.parsePageable();
+  // const olx = new OlxWrapper(config);
+  // await olx.parsePageable();
 
   // schedule.scheduleJob('0 * * * *', async () => {
   //   console.log('run scheduleJob');
@@ -58,7 +62,8 @@ function sleep(ms) {
 
   // console.log(allUrls);
 
-  // const olx = new OLX(config);
+  const olx = new OLX(config);
+  await olx.store();
 
   // // const olx = new Ria(browser, connection, url);
   // console.log(await olx.scrape());

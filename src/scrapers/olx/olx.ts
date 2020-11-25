@@ -6,6 +6,7 @@ require('dayjs/locale/ru');
 import {Dayjs} from "dayjs";
 import * as customParseFormat from 'dayjs/plugin/customParseFormat';
 import * as Puppeteer from "puppeteer-extra/dist/puppeteer";
+
 const _colors = require('colors');
 const signale = require('signale');
 const cliProgress = require('cli-progress');
@@ -118,19 +119,23 @@ export class OLX implements ScraperInterface {
   }
 
   async slideImages(page: Puppeteer.Page) {
-    const totalImages = await page.evaluate(
-      () => Number(document.querySelector('.descgallery__counter')
-        .getAttribute('data-to')
-        .replace('0', '')));
-    // TODO: make something with it
-    await page.waitFor(5000);
-    for await (const x of [...Array(totalImages - 1)]) {
-      await page.click('.descImageNext');
-      // without that on('response', dont run
-      await this.config.page.waitForResponse(
-        response => response.url().includes(';s=1000x700')
-          && response.status() === 200
-      );
+    const imMoreThenOneImage = await page.evaluate(
+      () => Boolean(document.querySelector('.descgallery__counter')));
+    if (imMoreThenOneImage) {
+      const totalImages = await page.evaluate(
+        () => Number(document.querySelector('.descgallery__counter')
+          .getAttribute('data-to')
+          .replace('0', '')));
+      // TODO: make something with it
+      await page.waitFor(5000);
+      for await (const x of [...Array(totalImages - 1)]) {
+        await page.click('.descImageNext');
+        // without that on('response', dont run
+        await this.config.page.waitForResponse(
+          response => response.url().includes(';s=1000x700')
+            && response.status() === 200
+        );
+      }
     }
   }
 
