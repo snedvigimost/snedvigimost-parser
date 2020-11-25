@@ -165,7 +165,7 @@ export class OLX implements ScraperInterface {
     listingEntity.price = await this.getPrice(this.config.page);
     await this.showNumbers(this.config.page);
     listingEntity.description = await this.getDescription(this.config.page);
-    listingEntity.publication_date = await this.getPublicationDate(this.config.page);
+    listingEntity.source_publication_date = await this.getPublicationDate(this.config.page);
     await this.config.page.waitFor(1000);
     listingEntity.phone_number = await this.getPhoneNumber(this.config.page);
 
